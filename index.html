@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confidence Booster</title>
+    <style>
+        /* --- CSS: MAGENTA DIANTHUS THEME --- */
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* A very soft pinkish-white background */
+            background-color: #fdf2f8; 
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 20px; /* Softer, rounder corners */
+            box-shadow: 0 10px 25px rgba(194, 24, 91, 0.15); /* Pinkish shadow */
+            text-align: center;
+            border-top: 5px solid #C2185B; /* Magenta top border */
+        }
+
+        h1 {
+            color: #880E4F; /* Dark Magenta text */
+            font-size: 26px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #AD1457; /* Medium Magenta */
+            margin-bottom: 25px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* The Counter Circle - Now Magenta */
+        .counter-box {
+            background: linear-gradient(135deg, #E91E63, #C2185B); /* Gradient Magenta */
+            color: white;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            margin: 0 auto 25px auto;
+            box-shadow: 0 4px 10px rgba(233, 30, 99, 0.4);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 2px solid #f8bbd0; /* Light pink border */
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #C2185B; /* Darker pink when typing */
+        }
+
+        button {
+            background-color: #00695C; /* Teal (Dianthus leaves color) */
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #004D40; /* Darker Teal */
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+
+        li {
+            background-color: white;
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #fce4ec;
+            border-left: 5px solid #E91E63; /* Magenta accent */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .clear-btn {
+            background-color: transparent;
+            color: #880E4F;
+            font-size: 12px;
+            margin-top: 20px;
+            text-decoration: underline;
+        }
+        
+        .clear-btn:hover {
+            background-color: transparent;
+            color: #C2185B;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Daily Wins</h1>
+        <p class="subtitle">Magenta Dianthus Tracker</p>
+        
+        <div class="counter-box" id="winCounter">0</div>
+
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="Add a win...">
+            <button onclick="addTask()">Add</button>
+        </div>
+
+        <ul id="taskList">
+            </ul>
+
+        <button class="clear-btn" onclick="clearAll()">Reset Day</button>
+    </div>
+
+    <script>
+        const inputField = document.getElementById('taskInput');
+        const listContainer = document.getElementById('taskList');
+        const counterDisplay = document.getElementById('winCounter');
+
+        let tasks = JSON.parse(localStorage.getItem('magentaWins')) || [];
+        renderTasks();
+
+        function addTask() {
+            const taskText = inputField.value;
+            if (taskText === '') {
+                alert("Please write something first!");
+                return;
+            }
+            tasks.push(taskText);
+            saveData();
+            renderTasks();
+            inputField.value = '';
+        }
+
+        function renderTasks() {
+            listContainer.innerHTML = '';
+            counterDisplay.innerText = tasks.length;
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span style="color:#4a4a4a;">${task}</span>
+                    <span style="cursor:pointer; opacity: 0.5;" onclick="deleteTask(${index})">❌</span>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            saveData();
+            renderTasks();
+        }
+
+        function clearAll() {
+            if(confirm("Start a fresh day?")) {
+                tasks = [];
+                saveData();
+                renderTasks();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('magentaWins', JSON.stringify(tasks));
+        }
+
+        inputField.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                addTask();
+            }
+        });
+    </script>
+</body>
+</html>
