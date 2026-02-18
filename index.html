@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confidence Booster</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
         /* --- CSS: MAGENTA DIANTHUS THEME --- */
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* A very soft pinkish-white background */
             background-color: #fdf2f8; 
             display: flex;
             justify-content: center;
             padding-top: 50px;
             margin: 0;
+            padding-bottom: 50px; /* Extra space at bottom */
         }
 
         .container {
@@ -22,30 +24,31 @@
             width: 90%;
             max-width: 400px;
             padding: 20px;
-            border-radius: 20px; /* Softer, rounder corners */
-            box-shadow: 0 10px 25px rgba(194, 24, 91, 0.15); /* Pinkish shadow */
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(194, 24, 91, 0.15);
             text-align: center;
-            border-top: 5px solid #C2185B; /* Magenta top border */
+            border-top: 5px solid #C2185B;
+            position: relative; /* Needed for confetti positioning */
+            z-index: 10;
         }
 
         h1 {
-            color: #880E4F; /* Dark Magenta text */
+            color: #880E4F;
             font-size: 26px;
             margin-bottom: 5px;
             font-weight: 700;
         }
 
         .subtitle {
-            color: #AD1457; /* Medium Magenta */
+            color: #AD1457;
             margin-bottom: 25px;
             font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* The Counter Circle - Now Magenta */
         .counter-box {
-            background: linear-gradient(135deg, #E91E63, #C2185B); /* Gradient Magenta */
+            background: linear-gradient(135deg, #E91E63, #C2185B);
             color: white;
             width: 90px;
             height: 90px;
@@ -57,6 +60,35 @@
             font-weight: bold;
             margin: 0 auto 25px auto;
             box-shadow: 0 4px 10px rgba(233, 30, 99, 0.4);
+            transition: transform 0.2s;
+        }
+
+        /* Pulse animation for the counter when updated */
+        .pulse {
+            transform: scale(1.1);
+        }
+
+        /* --- STICKER SECTION --- */
+        .sticker-area {
+            min-height: 40px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            background-color: #fce4ec; /* Light pink background for stickers */
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .sticker {
+            font-size: 24px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
         }
 
         .input-group {
@@ -68,19 +100,18 @@
         input {
             flex-grow: 1;
             padding: 12px;
-            border: 2px solid #f8bbd0; /* Light pink border */
+            border: 2px solid #f8bbd0;
             border-radius: 10px;
             font-size: 16px;
             outline: none;
-            transition: border-color 0.3s;
         }
 
         input:focus {
-            border-color: #C2185B; /* Darker pink when typing */
+            border-color: #C2185B;
         }
 
         button {
-            background-color: #00695C; /* Teal (Dianthus leaves color) */
+            background-color: #00695C;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -88,11 +119,10 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 16px;
-            transition: background-color 0.3s;
         }
 
         button:hover {
-            background-color: #004D40; /* Darker Teal */
+            background-color: #004D40;
         }
 
         ul {
@@ -107,7 +137,7 @@
             padding: 15px;
             border-radius: 10px;
             border: 1px solid #fce4ec;
-            border-left: 5px solid #E91E63; /* Magenta accent */
+            border-left: 5px solid #E91E63;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -126,11 +156,8 @@
             font-size: 12px;
             margin-top: 20px;
             text-decoration: underline;
-        }
-        
-        .clear-btn:hover {
-            background-color: transparent;
-            color: #C2185B;
+            border: none;
+            cursor: pointer;
         }
 
     </style>
@@ -142,6 +169,10 @@
         <p class="subtitle">Magenta Dianthus Tracker</p>
         
         <div class="counter-box" id="winCounter">0</div>
+
+        <div class="sticker-area" id="stickerContainer">
+            <span style="font-size: 12px; color: #ad1457; width: 100%;">Earn a sticker every 5 wins!</span>
+        </div>
 
         <div class="input-group">
             <input type="text" id="taskInput" placeholder="Add a win...">
@@ -158,9 +189,13 @@
         const inputField = document.getElementById('taskInput');
         const listContainer = document.getElementById('taskList');
         const counterDisplay = document.getElementById('winCounter');
+        const stickerContainer = document.getElementById('stickerContainer');
 
         let tasks = JSON.parse(localStorage.getItem('magentaWins')) || [];
+        
+        // Initial load
         renderTasks();
+        renderStickers();
 
         function addTask() {
             const taskText = inputField.value;
@@ -170,13 +205,25 @@
             }
             tasks.push(taskText);
             saveData();
+            
+            // Render everything
             renderTasks();
+            renderStickers();
+            
+            // Check for Rewards!
+            checkMilestones();
+
             inputField.value = '';
         }
 
         function renderTasks() {
             listContainer.innerHTML = '';
             counterDisplay.innerText = tasks.length;
+            
+            // Add pulse animation to counter
+            counterDisplay.classList.add('pulse');
+            setTimeout(() => counterDisplay.classList.remove('pulse'), 200);
+
             tasks.forEach((task, index) => {
                 const li = document.createElement('li');
                 li.innerHTML = `
@@ -187,10 +234,54 @@
             });
         }
 
+        // NEW: Function to handle Stickers
+        function renderStickers() {
+            const count = tasks.length;
+            // Calculate how many stickers we have earned (1 for every 5)
+            const stickersEarned = Math.floor(count / 5);
+            
+            // Clear current stickers
+            stickerContainer.innerHTML = '';
+
+            if (stickersEarned === 0) {
+                 stickerContainer.innerHTML = '<span style="font-size: 12px; color: #ad1457; width: 100%;">Earn a sticker every 5 wins!</span>';
+                 return;
+            }
+
+            // Add the stickers back in
+            for(let i = 0; i < stickersEarned; i++) {
+                const sticker = document.createElement('span');
+                sticker.classList.add('sticker');
+                sticker.innerText = '🌺'; // Dianthus flower emoji!
+                stickerContainer.appendChild(sticker);
+            }
+        }
+
+        // NEW: Function to check for Confetti (Every 10)
+        function checkMilestones() {
+            const count = tasks.length;
+            
+            if (count > 0 && count % 10 === 0) {
+                triggerConfetti();
+                alert("🎉 Amazing! That's " + count + " wins today!");
+            }
+        }
+
+        function triggerConfetti() {
+            // This uses the library we imported at the top
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#E91E63', '#00695C', '#FFD700'] // Magenta, Teal, Gold
+            });
+        }
+
         function deleteTask(index) {
             tasks.splice(index, 1);
             saveData();
             renderTasks();
+            renderStickers();
         }
 
         function clearAll() {
@@ -198,6 +289,7 @@
                 tasks = [];
                 saveData();
                 renderTasks();
+                renderStickers();
             }
         }
 
